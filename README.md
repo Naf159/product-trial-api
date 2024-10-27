@@ -6,6 +6,10 @@ composer install
 ## Changer les accès de la base de données sur .env
 DATABASE_URL="mysql://root@127.0.0.1:3306/product_api?serverVersion=8&charset=utf8mb4"
 
+##Backup des bases de données 
+databases/
+
+
 ## Remplir la base de données (data dump)
 php bin/console doctrine:fixtures:load
 
@@ -15,13 +19,13 @@ php bin/console server:start
 ## Tests POSTMAN
 
 ### Récupération de tout les produits
-GET http://127.0.0.1:8000/products
+GET _/products_
 
 ### Récupération d'un produit
-GET http://127.0.0.1:8000/products/9
+GET _/products/9_
 
 ### Création d'un nouveau produit POST
-POST http://127.0.0.1:8000/products
+POST _/products_
 {
 "code": "P0001",
 "name": "Product 01",
@@ -37,7 +41,24 @@ POST http://127.0.0.1:8000/products
 }
 
 ### Modification d'un produit PATCH
-`PATCH http://127.0.0.1:8000/products/2
+PATCH _/products/2_
+`{
+"code": "P002",
+"name": "Product 2 (updated)",
+"description": "Description for Product 2 (updated)",
+"image": "image1.png",
+"category": "Category10",
+"price": 10.0,
+"quantity": 99,
+"internalReference": "INT-001",
+"shellId": 1,
+"rating": 4,
+"inventoryStatus": "INSTOCK"
+}`
+
+### Suppression d'un produit
+DELETE _/products/4_
+`
 {
 "code": "P002",
 "name": "Product 2 (updated)",
@@ -51,24 +72,3 @@ POST http://127.0.0.1:8000/products
 "rating": 4,
 "inventoryStatus": "INSTOCK"
 }`
-### Suppression d'un produit
-`DELETE http://localhost:8080/api/products/4`
-
-
-
-
-
-
-{
-"code": "P002",
-"name": "Product 2 (updated)",
-"description": "Description for Product 2 (updated)",
-"image": "image1.png",
-"category": "Category10",
-"price": 10.0,
-"quantity": 99,
-"internalReference": "INT-001",
-"shellId": 1,
-"rating": 4,
-"inventoryStatus": "INSTOCK"
-}
