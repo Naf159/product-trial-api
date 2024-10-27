@@ -8,17 +8,21 @@ use App\Entity\Product;
 //Services
 use App\Service\ProductService;
 
+use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/products')]
 class ProductController extends AbstractController
 {
 
-    public function __construct(private ProductService $productService, private SerializerInterface $serializer)
+    public function __construct(private EntityManagerInterface $entityManager, private ProductService $productService, private SerializerInterface $serializer, private ValidatorInterface $validator)
     {
     }
 
@@ -34,47 +38,70 @@ class ProductController extends AbstractController
     public function getProduct(int $id): JsonResponse
     {
         $product = $this->productService->getProductById($id);
-        //if()
         if (!$product) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
         return new JsonResponse($product);
     }
 
-    #[Route('/', methods: ['POST'])]
-    public function createProduct(Request $request): JsonResponse
+    #[Route('', methods: ['POST'])]
+    public function createProduct(Request $request, SerializerInterface $serializer): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
         $product = new Product();
 
-        if(empty($date["code"]) || empty($date["code"]))
+        //Validation
+        $errors = $this->validator->validate($product);
+        if (count($errors) > 0) {
+            $errorMessages = [];
 
-        $this->productService->createProduct($product, $data);
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getPropertyPath();// .": ".$error->getMessage() ;
+            }
 
-        return new JsonResponse($product, Response::HTTP_CREATED);
+            return new JsonResponse([
+                'code' => 400,
+                'errors' => $errorMessages
+            ], JsonResponse::HTTP_BAD_REQUEST);
+        }
+        $serializer->deserialize($request->getContent(), Product::class, 'json', ['object_to_populate' => $product]);
+        $this->productService->createProduct($product);
+        return new JsonResponse(["code" => 200, "message" => "Création faite avec succès!"]);
     }
 
     #[Route('/{id}', methods: ['PATCH'])]
-    public function updateProduct(Request $request, int $id): JsonResponse
+    public function updateProduct(Product $product, Request $request, SerializerInterface $serializer): JsonResponse
     {
-        $product = $this->productService->getProductById($id);
         if (!$product) {
-            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+            return new JsonResponse(["code" => Response::HTTP_NOT_FOUND, "message" => "Produit introuvable!"],JsonResponse::HTTP_BAD_REQUES );
+        }
+        //Validation
+        $errors = $this->validator->validate($product);
+        if (count($errors) > 0) {
+            $errorMessages = [];
+
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getPropertyPath() .": ".$error->getMessage() ;
+            }
+
+            return new JsonResponse([
+                'code' => 400,
+                'errors' => $errorMessages
+            ], JsonResponse::HTTP_BAD_REQUEST);
         }
 
-        $data = json_decode($request->getContent(), true);
-        // Update fields
-        // $product->setName($data['name']);
+        // Déserialisation vers un objet produit
+        $serializer->deserialize($request->getContent(), Product::class, 'json', ['object_to_populate' => $product]);
 
-        $this->productService->updateProduct($product);
-        return new JsonResponse($product);
+        return new JsonResponse(["code" => 200, "message" => "Modification faite avec succès!"]);
     }
 
     #[Route('/{id}', methods: ['DELETE'])]
     public function deleteProduct(Product $product): JsonResponse
     {
-
+        if (!$product) {
+            return new JsonResponse(["code" => Response::HTTP_NOT_FOUND, "message" => "Produit introuvable!"],JsonResponse::HTTP_BAD_REQUES );
+        }
         $this->productService->deleteProduct($product);
-        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        return new JsonResponse(["code" => 200, "message" => "Suppression faite avec succès!"]);
     }
 }

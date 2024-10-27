@@ -33,12 +33,12 @@ class Product
     #[ORM\Column(type: 'text')]
     #[Assert\Type('string')]
     #[Groups(['product:read', 'product:write'])]
-    private ?string $description = null;
+    private string $description;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Type('string')]
     #[Groups(['product:read', 'product:write'])]
-    private ?string $image = null;
+    private string $image;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
@@ -47,25 +47,26 @@ class Product
     private string $category;
 
     #[ORM\Column]
-    #[Assert\NotBlank]
+    #[Assert\NotNull]
     #[Assert\Type('float')]
     #[Groups(['product:read', 'product:write'])]
     private float $price;
 
     #[ORM\Column]
-    #[Assert\NotBlank]
+    #[Assert\NotNull]
     #[Assert\Type('integer')]
+    #[Assert\GreaterThanOrEqual(0)]
     #[Groups(['product:read', 'product:write'])]
     private int $quantity;
 
     #[ORM\Column(length: 255)]
-    #[Assert\NotBlank]
+    #[Assert\NotNull]
     #[Assert\Type('string')]
     #[Groups(['product:read', 'product:write'])]
     private string $internalReference;
 
     #[ORM\Column]
-    #[Assert\NotBlank]
+    #[Assert\NotNull]
     #[Assert\Type('integer')]
     #[Groups(['product:read', 'product:write'])]
     private int $shellId;
@@ -79,15 +80,20 @@ class Product
     #[ORM\Column(nullable: true)]
     #[Assert\Type('integer')]
     #[Groups(['product:read', 'product:write'])]
-    private ?int $rating = null;
+    private int $rating;
 
     #[ORM\Column]
-    #[Groups(['product:read'])]
-    private ?\DateTimeImmutable $createdAt = null;
+    #[Groups(['product:read', 'product:write'])]
+    private \DateTimeImmutable $createdAt;
 
     #[ORM\Column]
-    #[Groups(['product:read'])]
-    private ?\DateTimeImmutable $updatedAt = null;
+    #[Groups(['product:read', 'product:write'])]
+    private \DateTimeImmutable $updatedAt;
+
+    public function __construct(){
+        $this->createdAt = new \DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable();
+    }
 
     #[ORM\PrePersist]
     public function onPrePersist(): void
@@ -102,12 +108,12 @@ class Product
         $this->updatedAt = new \DateTimeImmutable();
     }
 
-    public function getId(): ?int
+    public function getId(): int
     {
         return $this->id;
     }
 
-    public function getCode(): ?string
+    public function getCode(): string
     {
         return $this->code;
     }
@@ -119,7 +125,7 @@ class Product
         return $this;
     }
 
-    public function getName(): ?string
+    public function getName(): string
     {
         return $this->name;
     }
@@ -131,7 +137,7 @@ class Product
         return $this;
     }
 
-    public function getDescription(): ?string
+    public function getDescription(): string
     {
         return $this->description;
     }
@@ -143,7 +149,7 @@ class Product
         return $this;
     }
 
-    public function getImage(): ?string
+    public function getImage(): string
     {
         return $this->image;
     }
@@ -155,7 +161,7 @@ class Product
         return $this;
     }
 
-    public function getCategory(): ?string
+    public function getCategory(): string
     {
         return $this->category;
     }
@@ -167,7 +173,7 @@ class Product
         return $this;
     }
 
-    public function getPrice(): ?float
+    public function getPrice(): float
     {
         return $this->price;
     }
@@ -179,7 +185,7 @@ class Product
         return $this;
     }
 
-    public function getQuantity(): ?int
+    public function getQuantity(): int
     {
         return $this->quantity;
     }
@@ -191,7 +197,7 @@ class Product
         return $this;
     }
 
-    public function getInternalReference(): ?string
+    public function getInternalReference(): string
     {
         return $this->internalReference;
     }
@@ -203,7 +209,7 @@ class Product
         return $this;
     }
 
-    public function getShellId(): ?int
+    public function getShellId(): int
     {
         return $this->shellId;
     }
@@ -215,7 +221,7 @@ class Product
         return $this;
     }
 
-    public function getInventoryStatus(): ?InventoryStatus
+    public function getInventoryStatus():InventoryStatus
     {
         return $this->inventoryStatus;
     }
@@ -227,7 +233,7 @@ class Product
         return $this;
     }
 
-    public function getRating(): ?int
+    public function getRating(): int
     {
         return $this->rating;
     }

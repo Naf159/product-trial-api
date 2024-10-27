@@ -26,13 +26,13 @@ class ProductFixture extends Fixture
             $product->setName('Product ' . $i);
             $product->setDescription('Description of the product ' . $i);
             $product->setImage('image_of_product' . $i . '.jpg');
-            $product->setCategory('Category of the product ' . rand(9, 19)); // Random category
+            $product->setCategory('Category' . rand(9, 19)); // Random category
             $product->setPrice(rand(100, 500)); // Random price
-            $product->setQuantity(rand(1, 100));
+            $product->setQuantity(random_int(1, 100));
             $product->setInternalReference('REF00' . $i);
-            $product->setShellId(rand(1, 5));
+            $product->setShellId(random_int(1, 5));
             $product->setInventoryStatus($inventoryStatus);
-            $product->setRating(rand(1, 5));
+            $product->setRating(random_int(1, 5));
             $product->setCreatedAt(new \DateTimeImmutable());
             $product->setUpdatedAt(new \DateTimeImmutable());
 
