@@ -43,18 +43,20 @@ class ProductController extends AbstractController
     }
 
     #[Route('/{id}', methods: ['GET'])]
-    public function getProduct(int $id): JsonResponse
+    public function getProduct(?Product $product, SerializerInterface $serializer): JsonResponse
     {
-        $product = $this->productService->getProductById($id);
         if (!$product) {
-            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+            return new JsonResponse(["code" => Response::HTTP_NOT_FOUND, "message" => "Produit introuvable!"],JsonResponse::HTTP_BAD_REQUEST );
         }
-        return new JsonResponse($product);
+        $data = $serializer->serialize($product, 'json', ['groups' => ['product:read']]);
+
+        return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 
     #[Route('', methods: ['POST'])]
-    public function createProduct(Request $request, SerializerInterface $serializer): JsonResponse
+    public function createProduct(Request $request, SerializerInterface $serializer, ValidatorInterface $validator): JsonResponse
     {
+        //Desérialisation de données
         try {
            $product = $serializer->deserialize($request->getContent(), Product::class, 'json', [
                 DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true,
@@ -65,57 +67,58 @@ class ProductController extends AbstractController
             $violations = new ConstraintViolationList();
             /** @var NotNormalizableValueException $exception */
             foreach ($e->getErrors() as $exception) {
-                $message = sprintf('Le type du "%s" ("%s" donnés).', implode(', ', $exception->getExpectedTypes()), $exception->getCurrentType());
-                $parameters = [];
-                if ($exception->canUseMessageForUser()) {
-                    $parameters['hint'] = $exception->getMessage();
-                }
-                $violations->add(new ConstraintViolation($message, '', $parameters, null, $exception->getPath(), null));
+                $message = sprintf('Le type du champ est "%s" ("%s" fourni).', implode(', ', $exception->getExpectedTypes()), $exception->getCurrentType());
+                $errors[] = [
+                    'property' => $exception->getPath(),
+                    'message' => $message
+                ];
             }
 
-            return $this->json($violations, 400);
+            return new JsonResponse(
+                ["code" => Response::HTTP_BAD_REQUEST, "errors" => $errors],
+                JsonResponse::HTTP_BAD_REQUEST
+            );
         }
-
 
         return new JsonResponse(["code" => 200, "message" => "Création faite avec succès!"]);
     }
 
     #[Route('/{id}', methods: ['PATCH'])]
-    public function updateProduct(Product $product, Request $request, SerializerInterface $serializer): JsonResponse
+    public function updateProduct(?Product $product, Request $request, SerializerInterface $serializer): JsonResponse
     {
-
-        if (!$this->productRepository->find($product->getId())) {
+        dump($product);
+        if (!$product) {
             return new JsonResponse(["code" => Response::HTTP_NOT_FOUND, "message" => "Produit introuvable!"],JsonResponse::HTTP_BAD_REQUEST );
         }
         //Deserialisation
         try {
-            $deserialized_product = $serializer->deserialize($request->getContent(), Product::class, 'json', [
+            $serializer->deserialize($request->getContent(), Product::class, 'json', [
                 DenormalizerInterface::COLLECT_DENORMALIZATION_ERRORS => true, 'object_to_populate' => $product
             ]);
-            $this->productService->updateProduct($product);
+
         } catch (PartialDenormalizationException $e) {
             //Contourner les exceptions générées à cause des Asserts ($validator->validate() n'a pas catché ses erreurs)
-            $violations = new ConstraintViolationList();
-            /** @var NotNormalizableValueException $exception */
             foreach ($e->getErrors() as $exception) {
-                $message = sprintf('Le type "%s" (affecté à "%s" ).', implode(', ', $exception->getExpectedTypes()), $exception->getCurrentType());
-                $parameters = [];
-                if ($exception->canUseMessageForUser()) {
-                    $parameters['hint'] = $exception->getMessage();
-                }
-                $violations->add(new ConstraintViolation($message, '', $parameters, null, $exception->getPath(), null));
+                $message = sprintf('Le type du champ est "%s" ("%s" fourni).', implode(', ', $exception->getExpectedTypes()), $exception->getCurrentType());
+                $errors[] = [
+                    'property' => $exception->getPath(),
+                    'message' => $message
+                ];
             }
 
-            return $this->json($violations, 400);
+            return new JsonResponse(
+                ["code" => Response::HTTP_BAD_REQUEST, "errors" => $errors],
+                JsonResponse::HTTP_BAD_REQUEST
+            );
         }
-
+        $this->productService->updateProduct($product);
         return new JsonResponse(["code" => 200, "message" => "Modification faite avec succès!"]);
     }
 
     #[Route('/{id}', methods: ['DELETE'])]
-    public function deleteProduct($id): JsonResponse
+    public function deleteProduct(?Product $product): JsonResponse
     {
-        if (!$product = $this->productRepository->find($id)) {
+        if (!$product) {
             return new JsonResponse(["code" => Response::HTTP_NOT_FOUND, "message" => "Produit introuvable!"],JsonResponse::HTTP_BAD_REQUEST );
         }
         $this->productService->deleteProduct($product);
